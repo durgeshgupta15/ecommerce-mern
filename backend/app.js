@@ -1,40 +1,25 @@
-const express = require("express");
-const app = express();
-const cookieParser = require("cookie-parser");
-const bodyParser = require("body-parser");
-const fileUpload = require("express-fileupload");
-const path = require("path");
+const express = require('express')
+const app = express()
+const dotenv = require('dotenv')
+const cron = require('node-cron')
+const logger = require('./logger')
+const { DetailedHealthCheck } = require('./helpers/healthChecker')
+const { HealthCheckData } = require('./data/HealthCheckData')
 
-const errorMiddleware = require("./middleware/error");
+dotenv.config()
 
-// Config
-if (process.env.NODE_ENV !== "PRODUCTION") {
-  require("dotenv").config({ path: "backend/config/config.env" });
-}
+// Creating a cron job which runs on every 10 second
+// cron.schedule('*/10 * * * * *', async () => {
+//     logger.info('checking application health')
+//     try {
+//         const health = await DetailedHealthCheck(HealthCheckData)
+//         logger.info(`apllication health is: ${JSON.stringify(health)}`);
+//     } catch (err) {
+//         logger.error(`Error occured during health-check ${err}`)
+//     }
+// })
 
-app.use(express.json());
-app.use(cookieParser());
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(fileUpload());
 
-// Route Imports
-const product = require("./routes/productRoute");
-const user = require("./routes/userRoute");
-const order = require("./routes/orderRoute");
-const payment = require("./routes/paymentRoute");
 
-app.use("/api/v1", product);
-app.use("/api/v1", user);
-app.use("/api/v1", order);
-app.use("/api/v1", payment);
 
-app.use(express.static(path.join(__dirname, "../frontend/build")));
-
-app.get("*", (req, res) => {
-  res.sendFile(path.resolve(__dirname, "../frontend/build/index.html"));
-});
-
-// Middleware for Errors
-app.use(errorMiddleware);
-
-module.exports = app;
+module.exports = app

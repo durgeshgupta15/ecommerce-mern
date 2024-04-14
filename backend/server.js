@@ -1,38 +1,41 @@
-const app = require("./app");
-const cloudinary = require("cloudinary");
-const connectDatabase = require("./config/database");
+const app = require('./app')
+const logger = require('./logger')
+const connectDatabase = require('./db/database')
+const {
+    SimpleHealthCheck,
+    DetailedHealthCheck,
+} = require('./helpers/healthChecker')
+const { HealthCheckData } = require('./data/HealthCheckData')
 
-// Handling Uncaught Exception
-process.on("uncaughtException", (err) => {
-  console.log(`Error: ${err.message}`);
-  console.log(`Shutting down the server due to Uncaught Exception`);
-  process.exit(1);
-});
+// handle uncaught error
+process.on('uncaughtException', (err) => {
+    logger.error(`Shutting down the server error occured: ${err.message}`)
+    process.exit(1)
+})
 
-// Config
-if (process.env.NODE_ENV !== "PRODUCTION") {
-  require("dotenv").config({ path: "backend/config/config.env" });
-}
+// simple-health-check application
+app.get('/', (req, res) => {
+    res.send(SimpleHealthCheck())
+})
 
-// Connecting to database
-connectDatabase();
+//detailed health check application
+app.get('/health-check', async (req, res) => {
+    const data = await DetailedHealthCheck(HealthCheckData)
+    res.send(data)
+})
 
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
+// connecting to DB
+connectDatabase()
 
 const server = app.listen(process.env.PORT, () => {
-  console.log(`Server is working on http://localhost:${process.env.PORT}`);
-});
+    logger.info(`server is running on port: ${process.env.PORT}`)
+})
 
-// Unhandled Promise Rejection
-process.on("unhandledRejection", (err) => {
-  console.log(`Error: ${err.message}`);
-  console.log(`Shutting down the server due to Unhandled Promise Rejection`);
+// handle unhandled promise error
+process.on('unhandledRejection', (err) => {
+    logger.error(`Shutting down the server error occured: ${err.message}`)
 
-  server.close(() => {
-    process.exit(1);
-  });
-});
+    server.close(() => {
+        process.exit(1)
+    })
+})
